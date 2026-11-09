@@ -29,8 +29,14 @@ def frame_start_ms(index: int, fps: int) -> int:
 
 
 def frame_at_ms(ms: int, fps: int, count: int) -> int:
-    """Index of the frame on screen at `ms` (floor)."""
+    """Index of the frame on screen at `ms`.
+
+    Consistent with `frame_start_ms`: a timecode printed from a frame's start
+    (rounded to the millisecond) maps back to that same frame.
+    """
     index = (ms * fps) // 1000
+    if frame_start_ms(index + 1, fps) <= ms:
+        index += 1
     return max(0, min(count - 1, index))
 
 

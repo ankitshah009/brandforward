@@ -223,6 +223,30 @@ def test_redaction_layout_and_geometry_checks(job):
     assert verdict(confused)["verdict"] == "hold"
 
 
+def test_span_boundaries_round_trip_to_the_same_frame(job):
+    from brand_forward.vision import frame_at_ms, frame_start_ms
+
+    fps, count = job["vision"]["fps"], job["vision"]["frame_count"]
+    for index in range(count):
+        assert frame_at_ms(frame_start_ms(index, fps), fps, count) == index
+    wordmark = next(t for t in job["vision"]["tracks"] if t["track_id"] == "wordmark")
+    tail = wordmark["spans"][-1]
+    assert tail["visible"] is True
+    # A plan placed exactly on the measured boundary, as Gemma 4 31B did, must clear.
+    exact = {
+        "summary": "x",
+        "wordmark_hold": {"start": tail["start"], "end": tail["end"]},
+        "lower_third": {"start": "00:00.000", "end": "00:02.000", "text": "MIRA"},
+        "face_blur": True,
+        "claims": [{"track_id": "wordmark", "asserted": "fully_visible", "start": tail["start"], "end": tail["end"]}],
+    }
+    proposal = seal(
+        proposal_id="p-1", source="local", provider="ollama", model="m", mode="live",
+        normalized=normalize_plan(exact, duration_ms=6000), proxy=job["proxy"],
+    )
+    assert cross_check(proposal, job["vision"])["verdict"] == "clear"
+
+
 def test_plan_schema_rejects_bad_answers():
     from brand_forward.errors import PlanInvalid
 

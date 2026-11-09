@@ -1,0 +1,5 @@
+node_modules/
+out/
+.capture-tmp/
+public/capture.webm
+public/markers.json

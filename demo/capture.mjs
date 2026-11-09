@@ -80,25 +80,48 @@ async function next(settle = 300) {
   await pause(settle);
 }
 
-// 1. Landing: the problem, then the trust boundary.
-await page.goto(BASE + "/");
-await page.mouse.move(W / 2, H / 2);
-mark("landing");
-await pause(4500);
-await page.mouse.wheel(0, 620);
-await pause(3000);
-await page.mouse.wheel(0, -620);
-await pause(800);
+// Where each key element is on screen at a beat, so the edit can frame it exactly.
+const SELECTORS = {
+  monitor: "main .aspect-video",
+  verdict: 'section[aria-live="polite"]',
+  timeline: 'section[aria-label="Timeline"]',
+  meter: 'header [aria-label="Boundary meter"]',
+  step1: 'aside section[data-step="1"]',
+  egress: 'aside section[data-step="1"] ul',
+  plan: 'aside section[data-step="2"] button.ring-1',
+  checks: 'aside section[data-step="3"] ul',
+  receipt: 'aside section[data-step="4"]',
+  render: 'aside section[data-step="5"]',
+  alert: '[role="alert"]',
+  busy: 'aside [role="status"]',
+};
+const boxes = {};
+async function snap(beat) {
+  boxes[beat] = await page.evaluate((sels) => {
+    const out = {};
+    for (const [name, sel] of Object.entries(sels)) {
+      const el = document.querySelector(sel);
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      const x = Math.max(0, r.left), y = Math.max(0, r.top);
+      const w = Math.min(innerWidth, r.right) - x, h = Math.min(innerHeight, r.bottom) - y;
+      if (w > 4 && h > 4) out[name] = { x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) };
+    }
+    return out;
+  }, SELECTORS);
+}
 
-// 2. A fresh job: master drawn, frames hashed, wordmark measured.
-await click(page.getByRole("link", { name: /Run the harbor-launch job/ }).first(), { settle: 0 });
+// 1. A fresh job: master drawn, frames hashed, wordmark measured.
+await page.goto(BASE + "/jobs/harbor-launch");
 await page.waitForSelector("main video", { timeout: 60_000 });
 await page.waitForFunction(() => {
   const v = document.querySelector("main video");
   return v && v.readyState >= 2;
 });
+await page.mouse.move(W / 2, H / 2);
 mark("console");
-await pause(2500);
+await snap("console");
+await pause(1500);
 
 // Play the shot so the crane swing is visible.
 await click(button("Play"), { settle: 0 });
@@ -106,56 +129,83 @@ mark("play");
 await pause(6600);
 mark("play_end");
 
-// 3. What leaves: show the proxy.
+// 2. What leaves: show the proxy.
 await click(page.getByRole("button", { name: /Show proxy JSON/ }), { settle: 2400 });
 mark("proxy");
+await snap("proxy");
 await click(page.getByRole("button", { name: /Hide proxy JSON/ }), { settle: 400 });
 
-// 4. Cloud plan (scripted, for a repeatable demo).
-await next(0);
+// 3. Scripted cloud plan, then HOLD with frame evidence.
+await next(600);
 mark("cloud_plan");
-await pause(2500);
-
-// 5. Cross-check: HOLD with frame evidence.
-await next(0);
+await snap("cloud_plan");
+await pause(2200);
+await next(500);
 mark("hold");
+await snap("hold");
 await pause(4500);
-mark("hold_end");
 
-// Render is refused while the receipt is HOLD.
-await click(button("Render proof cut"), { settle: 2500 });
+// The render is refused while the receipt says HOLD.
+await click(button("Render proof cut"), { settle: 1200 });
 mark("render_refused");
+await snap("render_refused");
+await pause(1800);
 
-// 6. Revise with evidence: only failed checks go back to the planner.
+// 4. Revise with evidence: only failed checks go back.
 await next(0);
 mark("revised");
-await pause(1500);
-await next(0);
+await next(500);
 mark("clear");
-await pause(3500);
+await snap("clear");
+await pause(3000);
 
-// 7. Render the cleared plan; the proof cut autoplays in the rail.
-await next(0);
+// 5. LIVE: Claude Opus 5.5 plans from the proxy, in real time.
+await click(page.getByRole("radio", { name: "Live" }), { settle: 900 });
+mark("live_toggle");
+await snap("live_toggle");
+await click(page.locator('aside section[data-step="1"] button', { hasText: "Send proxy" }), { settle: 0 });
+mark("live_start");
+await pause(1200);
+await snap("live_busy");
+await idle();
+mark("live_done");
+await pause(600);
+await snap("live_done");
+await pause(2600);
+await next(500);
+mark("live_clear");
+await snap("live_clear");
+await pause(4000);
+
+// 6. Render the cleared live plan; the proof cut autoplays in the rail.
+await next(800);
 mark("rendered");
-await pause(6500);
-mark("rendered_end");
+await snap("rendered");
+await pause(5500);
 
-// 8. Receipt: verify, then tamper.
-await next(1200);
-await next(0);
+// 7. Receipt: verify, then tamper.
+await next(1000);
+await next(500);
 mark("tamper");
-await pause(3500);
+await snap("tamper");
+await pause(3000);
 
-// 9. Drop the link: on-device planning, nothing transmitted.
-await next(900);
+// 8. Drop the link: on-device planning, nothing transmitted.
+await next(600);
+mark("link_down");
+await snap("link_down");
+await pause(900);
 await click(nextBtn(), { settle: 300 });
 mark("local_start");
 await idle();
 mark("local_done");
-await pause(2500);
-await next(0);
+await pause(600);
+await snap("local_done");
+await pause(1800);
+await next(500);
 mark("local_verdict");
-await pause(4500);
+await snap("local_verdict");
+await pause(4000);
 mark("end");
 
 const video = page.video();
@@ -164,7 +214,7 @@ await browser.close();
 const raw = await video.path();
 await rename(raw, path.join(OUT, "capture.webm"));
 await rm(RAW, { recursive: true, force: true });
-await writeFile(path.join(OUT, "markers.json"), JSON.stringify(markers, null, 2) + "\n");
+await writeFile(path.join(OUT, "markers.json"), JSON.stringify({ ...markers, boxes }, null, 2) + "\n");
 console.log("wrote public/capture.webm and public/markers.json");
 const files = await readdir(OUT);
 console.log(files.join(" "));

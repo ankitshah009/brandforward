@@ -4,10 +4,10 @@
 
 <p align="center">
   <a href="https://github.com/ankitshah009/brandforward/releases/download/v0.2.0/brandforward-demo.mp4">
-    <img src="docs/demo-preview.gif" alt="BrandForward console: a cloud plan is held at frame 111 (65.9% covered), revised with evidence, then cleared" width="960">
+    <img src="docs/demo-preview.gif" alt="BrandForward: a cloud plan is held at frame 111 (65.9% covered), the render stays locked, then the plan is revised with evidence and clears" width="960">
   </a>
   <br>
-  <b><a href="https://github.com/ankitshah009/brandforward/releases/download/v0.2.0/brandforward-demo.mp4">▶ Watch the 95-second narrated demo (1080p)</a></b>: recorded from the real console against the running engine, composed in Remotion, narrated and sound-designed in Edits. The cloud plan uses the labeled scripted provider; the frame measurements, receipts, render and the on-device Gemma 4 31B plan are real.
+  <b><a href="https://github.com/ankitshah009/brandforward/releases/download/v0.2.0/brandforward-demo.mp4">▶ Watch the 93-second narrated demo (1080p)</a></b>: recorded from the real console against the running engine. It includes a live Claude Opus 5.5 call in real time (4.3 KB sent, 0 B of raw media, CLEAR on 6 of 6 checks). The HOLD story uses the labeled scripted cloud plan; frame measurements, receipts, the render and the on-device Gemma 4 31B plan are real.
 </p>
 
 ## Your personal agent for footage you can't upload

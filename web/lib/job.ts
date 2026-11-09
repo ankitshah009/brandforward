@@ -106,6 +106,8 @@ export function modelName(model: string, provider: string): string {
   const m = model.toLowerCase();
   if (m.includes("gemma-4-31b")) return "Gemma 4 31B";
   if (m.includes("gemma-4-e4b")) return "Gemma 4 E4B";
+  const claude = /^claude-(opus|sonnet|haiku|fable)-(\d+)(?:-(\d+))?$/.exec(m);
+  if (claude) return `Claude ${claude[1][0].toUpperCase()}${claude[1].slice(1)} ${claude[2]}${claude[3] ? "." + claude[3] : ""}`;
   if (provider === "scripted" || model === "scripted-cloud") return "Scripted cloud";
   if (provider === "rule") return "Rule planner";
   return model.split(":")[0];

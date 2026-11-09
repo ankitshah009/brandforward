@@ -1,19 +1,25 @@
 import type { Metadata } from "next";
-import { Fraunces, IBM_Plex_Mono, Schibsted_Grotesk } from "next/font/google";
+import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 
-const sans = Schibsted_Grotesk({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-sans", display: "swap" });
-const display = Fraunces({ subsets: ["latin"], weight: ["500", "600"], variable: "--font-display", display: "swap" });
-const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono", display: "swap" });
+const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
+const instrument = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-instrument", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "BrandForward", template: "%s · BrandForward" },
-  description: "Local-first pre-publishability for unreleased video. Raw footage stays on the workstation; cloud plans are checked against real frames and signed.",
+  title: { default: "BrandForward · Verify unreleased video without uploading it", template: "%s · BrandForward" },
+  description:
+    "Raw footage stays on the workstation. A 2 KB proxy gets an edit plan from a model. Every claim is checked against decoded frames and signed.",
+  openGraph: {
+    title: "BrandForward · Verify unreleased video without uploading it",
+    description: "Local-first pre-publishability verification. HOLD or CLEAR, with frame evidence and an Ed25519 receipt.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${display.variable} ${mono.variable}`}>
+    <html lang="en" className={`${geist.variable} ${geistMono.variable} ${instrument.variable}`}>
       <body>{children}</body>
     </html>
   );

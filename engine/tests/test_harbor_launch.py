@@ -332,3 +332,20 @@ def test_frames_nodes_and_errors(client, job, data_dir: Path):
     assert "warning" in list_nodes(infra)
     infra.write_text(json.dumps({"nodes": [{"id": "local-m5-max"}, {"id": "p8"}]}), encoding="utf-8")
     assert [node["id"] for node in list_nodes(infra)["nodes"]] == ["local-m5-max", "p8"]
+
+
+def test_offline_verifier_cli(client, job, data_dir: Path, capsys):
+    from brand_forward.verify import main as verify_main
+
+    proposal_id = research(client, job["id"], link="down")["proposal"]["id"]
+    signed = receipt(client, job["id"], proposal_id)
+    path = data_dir / "receipt.json"
+    path.write_text(json.dumps(signed), encoding="utf-8")
+    assert verify_main([str(path), "--public-key", signed["public_key"]]) == 0
+    assert '"valid": true' in capsys.readouterr().out
+    assert verify_main([str(path), "--public-key", Signer.generate().public_b64]) == 1
+    tampered = copy.deepcopy(signed)
+    tampered["body"]["verdict"] = "hold"
+    path.write_text(json.dumps(tampered), encoding="utf-8")
+    assert verify_main([str(path), "--public-key", signed["public_key"]]) == 1
+    assert verify_main([str(data_dir / "missing.json"), "--public-key", signed["public_key"]]) == 2

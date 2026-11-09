@@ -43,6 +43,60 @@ The demo job is `harbor-launch`: a 6-second launch shot of the MIRA hull. The ta
 
    Anything else returns `409`.
 
+## Why it matters: from build day to real deployment
+
+### A personal agent for footage you cannot upload
+
+A founder with an unreleased product film, a freelancer with client rushes, a journalist with an embargoed interview, a family with private video: each wants an editing agent, and none of them should hand the raw files to a cloud service to get one. With BrandForward the loop is:
+
+1. Drop footage on the workstation. It is decoded, hashed, and measured there.
+2. The agent plans the cut with a frontier model (it sees only the proxy) or with on-device weights.
+3. The workstation checks the plan against decoded frames. A wrong claim comes back HOLD with the frame that disproves it, and the planner revises.
+4. The result is a signed receipt the person can hand to a client, a platform, or legal.
+5. ffmpeg renders only what the receipt cleared.
+
+### Why a personal agent needs this architecture
+
+An agent that acts on someone's private media needs four properties. Each one exists in this repo as code, not policy text.
+
+| Property | Where it lives |
+| --- | --- |
+| **One egress boundary.** A single seam builds the request, runs the leakage guard, and logs the exact bytes and their SHA-256 before anything is sent. A down link never reaches the network. | `engine/brand_forward/cloud.py`, `guard.py` |
+| **Claims grounded in measurement.** Plans are opinions. Every claim, and every check an edit implies (visibility, lower-third geometry, redaction policy), is tested against per-frame pixel coverage. | `crosscheck.py`, `vision.py` |
+| **Self-correction without leaking.** On HOLD, only the failed checks (ids, intervals, percentages, reasons) go back to the planner. Never pixels. | `planner.py` (`feedback`, `messages`), `pipeline.research(revise=...)` |
+| **Works offline.** Link down, cloud error, or an answer outside the schema all fail over to Gemma 4 31B through Ollama, then to a deterministic rule planner. | `pipeline._local_plan`, `llm.py` |
+| **Accountable output.** The Ed25519 receipt separates `measured` (computed from files) from `opinion` (what a model proposed). The render refuses unless that receipt verifies, says CLEAR, and still matches the plan and the master on disk. | `receipt.py`, `pipeline.render` |
+
+### From this build to a ThinkStation P8
+
+| | Built today | Next, on the P8 / RTX PRO 6000 |
+| --- | --- | --- |
+| Vision | Template-diff pixel coverage of the wordmark on every decoded frame | SAM 3.1 tracking of arbitrary objects and faces behind the same `analyze` output |
+| Speech | Fixture transcript (en, ja) | Whisper on device |
+| Local reasoning | Gemma 4 31B via Ollama on an M5 Max | 30B+ weights resident beside vision and ASR in 96 GB |
+| Media | Synthetic 1280×720 master drawn by ffmpeg | Camera originals, 4K, long form |
+| Receipts | Ed25519 over canonical JSON; anyone can verify offline with `python -m brand_forward.verify receipt.json --public-key …` | HSM-backed key, public key published per workstation |
+| Agent surface | HTTP API plus an MCP tool manifest (`engine/mcp/manifest.json`) over the same functions | Served over MCP so any agent framework calls the same tools |
+| Integrations | None | NLE export, DAM ingest, legal review queue |
+
+### Who else it unblocks
+
+Brand and compliance teams that need proof a logo or a face was handled correctly. Agencies working on client footage under NDA. Newsrooms with embargoed material. Any enterprise that wants AI video editing but cannot let raw assets leave its machines.
+
+### What works in this repo today
+
+- ffmpeg master generation and SHA-256 of every decoded frame (144 frames, deterministic)
+- Pixel-measured wordmark occlusion per frame, in integer basis points
+- A ~2 KB anonymized proxy as the only egress, behind a leakage guard
+- Scripted cloud planner for repeatable demos, live OpenAI-compatible planner, schema validation, and failover
+- On-device planning with Gemma 4 31B through Ollama, with a rule-planner fallback
+- Revise-with-evidence loop from HOLD to CLEAR
+- Ed25519 receipts, deterministic for the same inputs, with a tamper test in the console and a standalone offline verifier (`python -m brand_forward.verify`)
+- ffmpeg render gated on a valid CLEAR receipt (face pixelation, lower third, logo hold)
+- A Next.js 16 console against the live engine: real master playback with measured overlays, per-frame coverage timeline, egress ledger with the exact request bytes, evidence frames, receipt split into measured and opinion, gated render. Design explored in Lovable, then ported onto the live engine (Tailwind v4, Geist, Instrument Serif, Framer Motion). Press `N` to step through the demo.
+- A Remotion demo video built from a Playwright capture of the real console (`demo/`)
+- 16 engine tests, run in parallel
+
 ## The boundary
 
 ```mermaid
@@ -105,7 +159,14 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000 and choose **Run the harbor-launch job**.
+Open http://localhost:3000 and choose **Run the harbor-launch job**. In the console, press `N` for the next step (Send proxy → Cross-check & sign → Revise with evidence → Render → Verify → Tamper test → Drop link → Plan on device), space to play, arrow keys to scrub.
+
+Verify a downloaded receipt with nothing but the receipt and the workstation's public key (shown in the console and at `GET /health`):
+
+```bash
+cd engine
+uv run --with-requirements requirements.txt python -m brand_forward.verify ~/Downloads/r_….json --public-key <base64>
+```
 
 Tests:
 

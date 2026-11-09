@@ -1,0 +1,24 @@
+{
+  "nodes": [
+    {
+      "id": "thinkstation-p8",
+      "role": "target-workstation",
+      "gpu": "RTX PRO 6000 Blackwell (intended)",
+      "status": "unreachable",
+      "ffmpeg": false,
+      "weights_seen": [],
+      "notes": "Intended target. Set PROBE_P8_HOST to probe it.",
+      "raw_video_policy": "never-leaves"
+    },
+    {
+      "id": "gpu-box",
+      "role": "accelerator",
+      "gpu": "NVIDIA GPU x4",
+      "status": "reachable",
+      "ffmpeg": true,
+      "weights_seen": [],
+      "notes": "",
+      "raw_video_policy": "never-leaves"
+    }
+  ]
+}

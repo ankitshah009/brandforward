@@ -1,0 +1,134 @@
+{
+  "schema": "brandforward.mcp-manifest.v2",
+  "server": {
+    "name": "brandforward",
+    "description": "Local pre-publishability tools. Raw frames stay on the workstation. These are the same Python functions the HTTP server calls.",
+    "bind": "127.0.0.1:8787"
+  },
+  "tools": [
+    {
+      "name": "track_frames",
+      "description": "Decode, hash, and measure every frame of the local master. Wordmark coverage is pixel-measured against the brand template.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "master",
+          "work_dir"
+        ],
+        "properties": {
+          "master": {
+            "type": "string"
+          },
+          "work_dir": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "transcribe",
+      "description": "Transcript segments with language tags. Fixture until Whisper runs on the node.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "fixture_id"
+        ],
+        "properties": {
+          "fixture_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "reason_local",
+      "description": "Deterministic on-device edit plan from the anonymized proxy. Never touches the network.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proxy",
+          "proposal_id"
+        ],
+        "properties": {
+          "proxy": {
+            "type": "object"
+          },
+          "proposal_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "export_proxy",
+      "description": "Build the anonymized metadata proxy, the only document that may leave. Fails closed on paths, pixels, or file bytes.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "asset_id",
+          "asset_sha256",
+          "duration_ms",
+          "vision",
+          "transcript"
+        ],
+        "properties": {
+          "asset_id": {
+            "type": "string"
+          },
+          "asset_sha256": {
+            "type": "string"
+          },
+          "duration_ms": {
+            "type": "integer"
+          },
+          "vision": {
+            "type": "object"
+          },
+          "transcript": {
+            "type": "array"
+          }
+        }
+      }
+    },
+    {
+      "name": "verify_proposal",
+      "description": "Cross-check an edit plan against measured frames, scene geometry, and redaction policy. Verdict is hold or clear.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proposal",
+          "vision"
+        ],
+        "properties": {
+          "proposal": {
+            "type": "object"
+          },
+          "vision": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "name": "sign_receipt",
+      "description": "Sign a receipt body with the workstation Ed25519 key. The private key is never a tool argument.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "body"
+        ],
+        "properties": {
+          "body": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  ]
+}

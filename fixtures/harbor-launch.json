@@ -1,0 +1,67 @@
+{
+  "id": "harbor-launch",
+  "title": "Harbor launch",
+  "synopsis": "Unreleased launch film for the MIRA hull. The master never leaves this workstation. The talent is unreleased and must be blurred before publish.",
+  "transcript": [
+    {
+      "start": "00:00.400",
+      "end": "00:01.800",
+      "lang": "en",
+      "text": "MIRA. The hull clears the dock tonight."
+    },
+    {
+      "start": "00:02.000",
+      "end": "00:03.200",
+      "lang": "ja",
+      "text": "進水、開始します。"
+    },
+    {
+      "start": "00:03.600",
+      "end": "00:05.200",
+      "lang": "en",
+      "text": "Hold on the name as the crane swings through."
+    }
+  ],
+  "scripted_cloud": {
+    "summary": "Logo reveal on the line 'hold on the name': hold the MIRA wordmark from 03.900 to 04.800 for the beat, lower third up front, talent blurred.",
+    "wordmark_hold": {
+      "start": "00:03.900",
+      "end": "00:04.800"
+    },
+    "lower_third": {
+      "start": "00:00.500",
+      "end": "00:03.000",
+      "text": "MIRA - Harbor launch"
+    },
+    "face_blur": true,
+    "claims": [
+      {
+        "track_id": "wordmark",
+        "asserted": "fully_visible",
+        "start": "00:04.000",
+        "end": "00:04.600"
+      }
+    ]
+  },
+  "scripted_cloud_revision": {
+    "summary": "Revised after the workstation's check: the crane load covers the name from 03.708 to 05.333, so the reveal now leads the line, 01.200 to 02.400, while the wordmark is clear.",
+    "wordmark_hold": {
+      "start": "00:01.200",
+      "end": "00:02.400"
+    },
+    "lower_third": {
+      "start": "00:00.500",
+      "end": "00:03.000",
+      "text": "MIRA - Harbor launch"
+    },
+    "face_blur": true,
+    "claims": [
+      {
+        "track_id": "wordmark",
+        "asserted": "fully_visible",
+        "start": "00:01.200",
+        "end": "00:02.400"
+      }
+    ]
+  }
+}

@@ -1,0 +1,31 @@
+[project]
+name = "brand-forward-engine"
+version = "0.1.0"
+description = "BrandForward local engine: on-device measurement, frame cross-check, and Ed25519 pre-publishability receipts."
+requires-python = ">=3.9"
+dependencies = [
+  "fastapi>=0.110,<0.116",
+  "uvicorn>=0.27,<0.35",
+  "cryptography>=42,<46",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<9",
+  "httpx>=0.27,<0.29",
+]
+
+[project.scripts]
+brand-forward-engine = "brand_forward.server:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["brand_forward*"]
+exclude = ["tests*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

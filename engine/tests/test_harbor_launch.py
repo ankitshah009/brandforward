@@ -349,3 +349,76 @@ def test_offline_verifier_cli(client, job, data_dir: Path, capsys):
     path.write_text(json.dumps(tampered), encoding="utf-8")
     assert verify_main([str(path), "--public-key", signed["public_key"]]) == 1
     assert verify_main([str(data_dir / "missing.json"), "--public-key", signed["public_key"]]) == 2
+
+
+class _FakeBlock:
+    def __init__(self, text):
+        self.type = "text"
+        self.text = text
+
+
+class _FakeResponse:
+    def __init__(self, text, stop_reason="end_turn"):
+        self.content = [_FakeBlock(text)]
+        self.stop_reason = stop_reason
+        self.stop_details = None
+        self.model = "claude-opus-5-5"
+
+
+def _fake_anthropic(monkeypatch, response, calls):
+    import anthropic
+
+    class FakeMessages:
+        def create(self, **params):
+            calls.append(params)
+            return response
+
+    class FakeBeta:
+        messages = FakeMessages()
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            self.beta = FakeBeta()
+
+    monkeypatch.setattr(anthropic, "Anthropic", FakeClient)
+
+
+def test_live_cloud_on_claude(client, job, monkeypatch):
+    from brand_forward import claude_planner
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-not-real")
+    good = {
+        "summary": "Reveal after the load lifts.",
+        "wordmark_hold": {"start": "00:05.400", "end": "00:06.000"},
+        "lower_third": {"start": "00:00.500", "end": "00:02.500", "text": "MIRA"},
+        "face_blur": True,
+        "claims": [{"track_id": "wordmark", "asserted": "fully_visible", "start": "00:05.400", "end": "00:06.000"}],
+    }
+    calls = []
+    _fake_anthropic(monkeypatch, _FakeResponse(json.dumps(good)), calls)
+    body = research(client, job["id"], provider="live")
+    assert body["route"] == "cloud" and body["proposal"]["mode"] == "live"
+    assert body["egress"]["destination"] == "api.anthropic.com"
+    assert body["egress"]["transmitted"] is True and body["egress"]["status"] == "answered"
+    params = calls[0]
+    assert params["model"] == claude_planner.DEFAULT_MODEL
+    assert params["fallbacks"] == "default" and params["betas"] == [claude_planner.FALLBACK_BETA]
+    assert params["output_config"]["format"]["type"] == "json_schema"
+    assert "pattern" not in json.dumps(params["output_config"])
+    assert [m["role"] for m in params["messages"]] == ["user"]
+    assert json.loads(params["messages"][0]["content"]) == job["proxy"]
+    payload = client.get("/jobs/{0}/egress/{1}".format(job["id"], body["egress"]["seq"]))
+    assert hashlib.sha256(payload.content).hexdigest() == body["egress"]["payload_sha256"]
+    for marker in ("Users", "local_path", ".mp4", ".png", "test-key-not-real"):
+        assert marker not in payload.text
+    assert receipt(client, job["id"], body["proposal"]["id"])["body"]["verdict"] == "clear"
+
+
+def test_claude_refusal_fails_over_on_device(client, job, monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-not-real")
+    calls = []
+    _fake_anthropic(monkeypatch, _FakeResponse("", stop_reason="refusal"), calls)
+    body = research(client, job["id"], provider="live")
+    assert calls and body["route"] == "local-failover"
+    assert body["egress"]["status"] == "failed" and "declined" in body["egress"]["reason"]
+    assert body["proposal"]["source"] == "local-failover"

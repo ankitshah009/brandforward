@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 
-from brand_forward import llm
+from brand_forward import claude_planner, llm
 from brand_forward.media import ffmpeg_version, probe_ok
 from brand_forward.vision import METHOD
 
@@ -13,6 +13,7 @@ def report() -> dict:
     ffmpeg_problem = probe_ok()
     local = None if os.environ.get("BRAND_FORWARD_LOCAL") == "rule" else llm.local_model()
     cloud = llm.cloud_config()
+    claude = claude_planner.configured() and os.environ.get("BRAND_FORWARD_CLOUD", "auto") != "openai"
     return {
         "media": {
             "state": "real" if ffmpeg_problem is None else "missing",
@@ -31,11 +32,20 @@ def report() -> dict:
             "model": local,
             "target": "30B+ open weights on RTX PRO 6000",
         },
-        "cloud": {
-            "state": "configured" if cloud.configured else "unconfigured",
-            "detail": "{0} at {1}".format(cloud.model, cloud.host) if cloud.configured else "No API key; live cloud fails over",
-            "model": cloud.model,
-            "host": cloud.host,
-        },
+        "cloud": (
+            {
+                "state": "configured",
+                "detail": "{0} at {1} via the Anthropic SDK".format(claude_planner.model(), claude_planner.HOST),
+                "model": claude_planner.model(),
+                "host": claude_planner.HOST,
+            }
+            if claude
+            else {
+                "state": "configured" if cloud.configured else "unconfigured",
+                "detail": "{0} at {1}".format(cloud.model, cloud.host) if cloud.configured else "No API key; live cloud fails over",
+                "model": cloud.model,
+                "host": cloud.host,
+            }
+        ),
         "receipts": {"state": "real", "detail": "Ed25519 over canonical JSON"},
     }

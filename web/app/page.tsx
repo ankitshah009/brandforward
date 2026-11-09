@@ -30,6 +30,7 @@ const HONESTY = [
   { t: "ffmpeg decode, hash, render", s: "real" },
   { t: "Pixel-measured vision", s: "real" },
   { t: "Gemma 4 31B on device", s: "real" },
+  { t: "Claude Opus 5.5 live planner", s: "real" },
   { t: "Ed25519 receipts", s: "real" },
   { t: "Transcript", s: "fixture" },
   { t: "SAM 3.1 · Whisper", s: "P8 target" },

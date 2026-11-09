@@ -26,7 +26,7 @@
 2. Terminal 1: `cd engine && uv run python -m brand_forward`
 3. Terminal 2: `cd web && npm install && npm run dev`, then open http://localhost:3000 and choose **Run the harbor-launch job**.
 4. Press **N** to walk the demo: Send proxy → Cross-check & sign (HOLD: frame 111, wordmark 65.9% covered) → Revise with evidence → Cross-check & sign (CLEAR) → Render proof cut → Verify signature → Tamper test → Drop link → Plan on device → Cross-check & sign (CLEAR).
-5. Optional: pull a 27B–32B-class model into Ollama for on-device planning; without one, a deterministic rule planner runs. Put `OPENAI_API_KEY=` in a repo-root `.env.local` and pick **Live** to use a real cloud planner.
+5. Optional: pull a 27B–32B-class model into Ollama for on-device planning; without one, a deterministic rule planner runs. Put `ANTHROPIC_API_KEY=` in a repo-root `.env.local` (gitignored) and pick **Live**: the proxy goes to Claude Opus 5.5 through the Anthropic SDK, with structured output and server-side refusal fallback. Any failure fails over on device.
 6. Verify a downloaded receipt offline: `cd engine && uv run python -m brand_forward.verify receipt.json --public-key <public_key from GET /health>`
 
 ### Day to day
@@ -119,7 +119,7 @@ Brand and compliance teams that need proof a logo or a face was handled correctl
 - ffmpeg master generation and SHA-256 of every decoded frame (144 frames, deterministic)
 - Pixel-measured wordmark occlusion per frame, in integer basis points
 - A ~2 KB anonymized proxy as the only egress, behind a leakage guard
-- Scripted cloud planner for repeatable demos, live OpenAI-compatible planner, schema validation, and failover
+- Scripted cloud planner for repeatable demos; live planning on Claude Opus 5.5 through the Anthropic SDK (structured output, `fallbacks: "default"`), with an OpenAI-compatible endpoint as an alternative; schema validation and failover on every path
 - On-device planning with Gemma 4 31B through Ollama, with a rule-planner fallback
 - Revise-with-evidence loop from HOLD to CLEAR
 - Ed25519 receipts, deterministic for the same inputs, with a tamper test in the console and a standalone offline verifier (`python -m brand_forward.verify`)
@@ -158,7 +158,7 @@ This build runs on an Apple M5 Max laptop, not the ThinkStation P8. The camera o
 | Talent face and hull boxes | Scene layout from the generator | SAM 3.1 detections |
 | Transcript (en, ja) | Fixture | Whisper on device |
 | On-device planner | **Real.** Gemma 4 31B (Q8) via Ollama when present; deterministic rule planner otherwise | 30B+ open weights on Blackwell |
-| Cloud planner | Scripted answer by default, labeled as scripted, never transmitted. Optional live OpenAI-compatible endpoint (needs a valid key) | Frontier API |
+| Cloud planner | Scripted answer by default, labeled as scripted, never transmitted. **Live: Claude Opus 5.5** via the Anthropic SDK when `ANTHROPIC_API_KEY` is set (verified: a real plan in 14 s, 4.4 KB sent, signed CLEAR on 7 checks); OpenAI-compatible endpoint otherwise | Same |
 | Egress ledger and leakage guard | **Real** | Same |
 | Cross-check and receipts | **Real.** Ed25519, canonical JSON, pinned key | Same, HSM-backed key |
 
@@ -222,7 +222,10 @@ Environment variables, or `KEY=VALUE` lines in a repo-root `.env.local` (gitigno
 | `BRAND_FORWARD_OLLAMA` | `http://127.0.0.1:11434` | Ollama endpoint. |
 | `BRAND_FORWARD_CLOUD_URL` | `https://api.openai.com/v1` | OpenAI-compatible base URL for `provider: live`. |
 | `BRAND_FORWARD_CLOUD_MODEL` | `gpt-5-mini` | Cloud model. |
-| `BRAND_FORWARD_CLOUD_KEY` / `OPENAI_API_KEY` | none | Cloud key. Without one, a live request fails over on device. |
+| `ANTHROPIC_API_KEY` | none | Enables the live Claude planner (default for `provider: live`). |
+| `BRAND_FORWARD_CLAUDE_MODEL` | `claude-opus-5-5` | Claude model for live planning. |
+| `BRAND_FORWARD_CLOUD` | `auto` | Set to `openai` to force the OpenAI-compatible path even when an Anthropic key is present. |
+| `BRAND_FORWARD_CLOUD_KEY` / `OPENAI_API_KEY` | none | Key for the OpenAI-compatible path. Without any cloud key, a live request fails over on device. |
 | `BRAND_FORWARD_FONT` | system serif | Font file for the wordmark and lower third. |
 
 ## API
@@ -251,6 +254,7 @@ engine/      FastAPI engine and MCP tools (Python, uv)
     media.py       ffmpeg: generate, frame hashes, decode regions, render
     vision.py      per-frame wordmark coverage, measured spans
     planner.py     edit-plan schema, prompts, scripted and rule planners
+    claude_planner.py  live cloud planner on Claude (Anthropic SDK)
     llm.py         OpenAI-compatible cloud and Ollama clients (stdlib HTTP)
     cloud.py       the egress seam and ledger
     guard.py       leakage guard for anything that leaves

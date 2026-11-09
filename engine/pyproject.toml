@@ -9,6 +9,7 @@ dependencies = [
   "anyio>=4.16.0",
   "uvicorn>=0.54.0",
   "cryptography>=50.0.2",
+  "anthropic>=2.6.0",
 ]
 
 [project.optional-dependencies]

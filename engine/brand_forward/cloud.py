@@ -15,7 +15,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from brand_forward import llm
+import os
+
+from brand_forward import claude_planner, llm
 from brand_forward.guard import assert_export_safe
 from brand_forward.planner import messages, scripted_cloud
 
@@ -60,13 +62,20 @@ def send(
     assert_export_safe(proxy)
     if revision:
         assert_export_safe(revision["feedback"])
+    use_claude = claude_planner.configured() and os.environ.get("BRAND_FORWARD_CLOUD", "auto") != "openai"
     config = llm.cloud_config()
-    payload = llm.openai_request_body(config.model, messages(proxy, revision))
+    if use_claude:
+        params = claude_planner.request_params(messages(proxy, revision))
+        payload = claude_planner.payload_bytes(params)
+        host, cloud_model = claude_planner.HOST, params["model"]
+    else:
+        payload = llm.openai_request_body(config.model, messages(proxy, revision))
+        host, cloud_model = config.host, config.model
     ledger_dir.mkdir(parents=True, exist_ok=True)
     (ledger_dir / "{0:03d}.json".format(seq)).write_bytes(payload)
 
     if not link_up:
-        record = _record(seq, provider=provider, destination=config.host, model=config.model,
+        record = _record(seq, provider=provider, destination=host, model=cloud_model,
                          status="blocked", payload=payload, sent=False)
         record["reason"] = "Link down. The request was built and guarded but not sent."
         return Egress(record=record, payload=payload)
@@ -78,8 +87,22 @@ def send(
         return Egress(record=record, answer=scripted_cloud(fixture, revised=bool(revision)), payload=payload)
 
     started = time.monotonic()
-    record = _record(seq, provider="live", destination=config.host, model=config.model,
+    record = _record(seq, provider="live", destination=host, model=cloud_model,
                      status="sending", payload=payload, sent=True)
+    if use_claude:
+        try:
+            answer, latency, served_by = claude_planner.plan(params)
+        except claude_planner.PlannerError as exc:
+            record["status"] = "failed"
+            record["reason"] = str(exc)
+            record["transmitted"] = not str(exc).startswith("unreachable")
+            record["bytes"] = len(payload) if record["transmitted"] else 0
+            record["latency_ms"] = int((time.monotonic() - started) * 1000)
+            return Egress(record=record, payload=payload)
+        record["status"] = "answered"
+        record["latency_ms"] = latency
+        record["model"] = served_by
+        return Egress(record=record, answer=answer, payload=payload)
     try:
         answer = llm.openai_chat(config, payload)
     except llm.LlmError as exc:

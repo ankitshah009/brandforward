@@ -20,6 +20,8 @@ def offline_environment(monkeypatch):
     monkeypatch.setenv("BRAND_FORWARD_LOCAL", "rule")
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("BRAND_FORWARD_CLOUD_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("BRAND_FORWARD_CLOUD", raising=False)
 
 
 @pytest.fixture

@@ -23,7 +23,8 @@ export function VerdictHero(p: VerdictHeroProps) {
     <section
       aria-live="polite"
       className={cn(
-        "relative flex h-[104px] shrink-0 items-center gap-6 overflow-hidden rounded-[6px] border px-6 transition-colors duration-700",
+        "relative flex shrink-0 items-center gap-6 overflow-hidden rounded-[6px] border px-6 transition-all duration-700",
+        v === "none" ? "h-[72px]" : "h-[104px]",
         v === "hold" && "border-hold/45 bg-hold-dim",
         v === "clear" && "border-clear/40 bg-clear-dim",
         v === "none" && "border-hairline bg-surface-1",
@@ -59,7 +60,7 @@ export function VerdictHero(p: VerdictHeroProps) {
           />
         )}
       </AnimatePresence>
-      <div className="relative w-[250px] shrink-0">
+      <div className={cn("relative shrink-0", v === "none" ? "w-[190px]" : "w-[250px]")}>
         <AnimatePresence mode="wait">
           <motion.h2
             key={v}
@@ -69,7 +70,7 @@ export function VerdictHero(p: VerdictHeroProps) {
             transition={{ duration: 0.75, ease: [0.2, 0.8, 0.2, 1] }}
             className={cn(
               "font-display leading-none",
-              v === "none" ? "text-[40px] text-faint" : "text-[76px]",
+              v === "none" ? "text-[30px] text-faint/80" : "text-[76px]",
               v === "hold" && "text-hold [text-shadow:0_0_40px_oklch(0.64_0.215_28/55%)]",
               v === "clear" && "text-clear [text-shadow:0_0_40px_oklch(0.8_0.15_158/45%)]",
             )}

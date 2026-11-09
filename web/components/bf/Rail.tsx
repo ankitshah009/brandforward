@@ -41,10 +41,10 @@ export function StepCard({ n, title, status, aside, children }: { n: number; tit
       ref={ref}
       data-step={n}
       aria-current={status === "active" ? "step" : undefined}
-      className={cn("relative border-b border-hairline px-4 py-4 transition-colors duration-500", status === "active" && "bg-surface-1")}
+      className={cn("relative border-b border-hairline px-4 transition-colors duration-500", status === "idle" ? "py-3" : "py-4", status === "active" && "bg-surface-1")}
     >
       {status === "active" && <motion.span layoutId="rail-active" className="absolute inset-y-0 left-0 w-[2px] bg-brass shadow-[0_0_12px_var(--brass)]" />}
-      <header className="mb-3 flex items-center gap-2.5">
+      <header className={cn("flex items-center gap-2.5", status !== "idle" && "mb-3")}>
         <span
           className={cn(
             "flex h-5 w-5 items-center justify-center rounded-full border font-mono text-[10px] tnum",
@@ -56,7 +56,7 @@ export function StepCard({ n, title, status, aside, children }: { n: number; tit
         <h3 className={cn("text-[13px] font-medium", status === "idle" && "text-muted-foreground")}>{title}</h3>
         <div className="ml-auto">{aside}</div>
       </header>
-      {children}
+      {status === "idle" ? null : children}
     </section>
   );
 }

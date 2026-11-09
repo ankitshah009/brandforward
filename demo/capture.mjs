@@ -71,102 +71,90 @@ async function reveal(selector) {
 }
 
 const button = (name) => page.getByRole("button", { name, exact: true });
-const idle = () => page.waitForSelector(".rail > .busy", { state: "detached", timeout: 300_000 });
+const nextBtn = () => page.locator('header button[title="Next step (N)"]');
+const idle = () => page.waitForFunction(() => document.querySelectorAll('[role="status"]').length === 0, null, { timeout: 300_000 });
+async function next(settle = 300) {
+  await click(nextBtn(), { settle: 150 });
+  await page.waitForTimeout(250);
+  await idle();
+  await pause(settle);
+}
 
-// 1. Landing: the problem.
+// 1. Landing: the problem, then the trust boundary.
 await page.goto(BASE + "/");
 await page.mouse.move(W / 2, H / 2);
 mark("landing");
-await pause(5000);
+await pause(4500);
+await page.mouse.wheel(0, 620);
+await pause(3000);
+await page.mouse.wheel(0, -620);
+await pause(800);
 
 // 2. A fresh job: master drawn, frames hashed, wordmark measured.
-await click(page.getByRole("link", { name: "Run the harbor-launch job" }), { settle: 0 });
-await page.waitForSelector(".monitor video", { timeout: 60_000 });
+await click(page.getByRole("link", { name: /Run the harbor-launch job/ }).first(), { settle: 0 });
+await page.waitForSelector("main video", { timeout: 60_000 });
 await page.waitForFunction(() => {
-  const v = document.querySelector(".monitor video");
+  const v = document.querySelector("main video");
   return v && v.readyState >= 2;
 });
 mark("console");
 await pause(2500);
 
 // Play the shot so the crane swing is visible.
-await click(page.getByRole("button", { name: "Play" }), { settle: 0 });
+await click(button("Play"), { settle: 0 });
 mark("play");
 await pause(6600);
 mark("play_end");
 
 // 3. What leaves: show the proxy.
-await click(page.getByRole("button", { name: "Show proxy" }), { settle: 2200 });
+await click(page.getByRole("button", { name: /Show proxy JSON/ }), { settle: 2400 });
 mark("proxy");
-await click(page.getByRole("button", { name: "Hide proxy" }), { settle: 400 });
+await click(page.getByRole("button", { name: /Hide proxy JSON/ }), { settle: 400 });
 
 // 4. Cloud plan (scripted, for a repeatable demo).
-await click(button("Send proxy to cloud (scripted)"), { settle: 0 });
-await idle();
+await next(0);
 mark("cloud_plan");
-await reveal(".step:nth-of-type(2)");
 await pause(2500);
 
 // 5. Cross-check: HOLD with frame evidence.
-await click(button("Cross-check & sign receipt"), { settle: 0 });
-await idle();
+await next(0);
 mark("hold");
-await reveal(".checks");
 await pause(4500);
 mark("hold_end");
 
 // Render is refused while the receipt is HOLD.
-await reveal(".step:nth-of-type(5)");
 await click(button("Render proof cut"), { settle: 2500 });
 mark("render_refused");
 
 // 6. Revise with evidence: only failed checks go back to the planner.
-await reveal(".step:nth-of-type(3)");
-await click(button("Revise with evidence"), { settle: 0 });
-await idle();
+await next(0);
 mark("revised");
-await pause(1200);
-await click(button("Cross-check & sign receipt"), { settle: 0 });
-await idle();
-mark("clear");
-await reveal(".step:nth-of-type(4)");
-await pause(3500);
-
-// 7. Receipt: verify, then tamper.
-await click(button("Verify signature"), { settle: 0 });
-await idle();
 await pause(1500);
-await click(button("Tamper test"), { settle: 0 });
-await idle();
-mark("tamper");
+await next(0);
+mark("clear");
 await pause(3500);
 
-// 8. Render the cleared plan and play the proof cut.
-await reveal(".step:nth-of-type(5)");
-await click(button("Render proof cut"), { settle: 0 });
-await idle();
+// 7. Render the cleared plan; the proof cut autoplays in the rail.
+await next(0);
 mark("rendered");
-await page.evaluate(() => {
-  const v = document.querySelector(".proof video");
-  v?.scrollIntoView({ block: "center" });
-  v?.play();
-});
 await pause(6500);
 mark("rendered_end");
 
+// 8. Receipt: verify, then tamper.
+await next(1200);
+await next(0);
+mark("tamper");
+await pause(3500);
+
 // 9. Drop the link: on-device planning, nothing transmitted.
-await reveal(".step:nth-of-type(1)");
-await click(button("Drop link"), { settle: 800 });
-await click(button("Plan on device"), { settle: 0 });
+await next(900);
+await click(nextBtn(), { settle: 300 });
 mark("local_start");
 await idle();
 mark("local_done");
-await reveal(".step:nth-of-type(2)");
-await pause(3000);
-await click(button("Cross-check & sign receipt"), { settle: 0 });
-await idle();
+await pause(2500);
+await next(0);
 mark("local_verdict");
-await reveal(".checks");
 await pause(4500);
 mark("end");
 

@@ -120,7 +120,7 @@ const Boundary: React.FC<{ duration: number }> = ({ duration }) => {
         <div style={{ border: `1px solid ${C.line}`, borderRadius: 18, padding: 44, background: "rgba(255,255,255,0.02)" }}>
           <div style={{ fontFamily: MONO, color: C.clear, fontSize: 24, letterSpacing: 4 }}>WORKSTATION</div>
           <div style={{ fontFamily: SERIF, color: C.ink, fontSize: 64, marginTop: 18 }}>Every pixel stays.</div>
-          <div style={{ marginTop: 40, fontFamily: SANS, color: C.dim, fontSize: 28 }}>Raw master · 260 KB here, gigabytes in production</div>
+          <div style={{ marginTop: 40, fontFamily: SANS, color: C.dim, fontSize: 28 }}>Raw master · 30.7 MB here, gigabytes in production</div>
           <div style={{ height: 22, background: "rgba(255,255,255,0.06)", borderRadius: 6, marginTop: 14, overflow: "hidden" }}>
             <div style={{ width: `${grow * 100}%`, height: "100%", background: C.faint }} />
           </div>
@@ -310,7 +310,7 @@ function scenes(): Scene[] {
     clip(
       {
         from: at("hold", -400),
-        caption: "HOLD. Frame 112 shows the wordmark 67% covered.",
+        caption: "HOLD. Frame 111 shows the wordmark 65.9% covered.",
         sub: "Every claim, and everything an edit implies, is checked against decoded frames. Evidence: frame index, SHA-256, percentage.",
         zoom: { x: 0.45, y: 0.55, scale: 1.2 },
         tone: "hold",

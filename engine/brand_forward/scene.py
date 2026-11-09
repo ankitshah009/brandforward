@@ -92,41 +92,91 @@ def _wordmark_text() -> str:
     ).format(font_arg, WORDMARK.x, WORDMARK.w, WORDMARK.y, WORDMARK.h)
 
 
-def _plate_chain() -> str:
-    """Static set: dusk sky, water, crane frame, hull, quay panel, wordmark."""
+FRAME_S = 1.0 / FPS
+
+
+def _hold(chain: str) -> str:
+    """Render a static layer once, then repeat that frame for the whole shot."""
+    return "{0},loop=loop={1}:size=1:start=0,setpts=N/{2}/TB".format(chain, FPS * DURATION_MS // 1000 - 1, FPS)
+
+
+def _skyline() -> str:
+    """Distant harbor skyline and a far crane, softened for depth."""
+    blocks = [
+        (0, 418, 70, 52), (64, 436, 54, 34), (118, 404, 38, 66), (150, 428, 90, 42), (236, 412, 46, 58),
+        (600, 430, 70, 40), (664, 410, 34, 60), (694, 424, 58, 46), (748, 440, 40, 30),
+        (1010, 420, 60, 50), (1064, 436, 44, 34), (1100, 404, 30, 66), (1236, 426, 44, 44),
+    ]
+    parts = ["drawbox=x={0}:y={1}:w={2}:h={3}:color=0x2A2E3E@0.88:t=fill".format(*b) for b in blocks]
+    parts += [
+        "drawbox=x=300:y=300:w=6:h=170:color=0x2A2E3E@0.85:t=fill",
+        "drawbox=x=262:y=300:w=150:h=5:color=0x2A2E3E@0.85:t=fill",
+        "drawbox=x=380:y=305:w=2:h=60:color=0x2A2E3E@0.75:t=fill",
+    ]
+    lights = [(30, 432), (88, 446), (128, 418), (170, 440), (252, 426), (618, 442), (676, 424), (716, 436), (1028, 434), (1080, 446), (1112, 418)]
+    parts += ["drawbox=x={0}:y={1}:w=3:h=3:color=0xF4C47F@0.9:t=fill".format(x, y) for x, y in lights]
+    return ",".join(parts)
+
+
+def _sun() -> str:
+    size = 640
+    half = size // 2
+    return (
+        "color=c=0xFFB86E:s={0}x{0}:r={1}:d={2:.4f},format=rgba,"
+        "geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':"
+        "a='230*pow(max(0\\,1-hypot(X-{3}\\,Y-{3})/{3})\\,2.4)'"
+    ).format(size, FPS, FRAME_S, half)
+
+
+def _reflection() -> str:
+    return (
+        "color=c=0xF2A766:s=260x250:r={0}:d={1:.4f},format=rgba,"
+        "geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':"
+        "a='150*pow(max(0\\,1-abs(X-130)/130)\\,2)*pow(max(0\\,1-Y/250)\\,1.4)'"
+    ).format(FPS, FRAME_S)
+
+
+def _set_chain() -> str:
+    """Foreground set: water base, crane frame, hull, quay panel, wordmark, talent body."""
     w = WORDMARK
     parts = [
-        "drawbox=x=0:y=470:w=iw:h=ih-470:color=0x0C1E2A:t=fill",
-        "drawbox=x=0:y=468:w=iw:h=3:color=0xE7A868@0.55:t=fill",
-        "drawbox=x=0:y=520:w=iw:h=2:color=0x1F3A48@0.8:t=fill",
-        "drawbox=x=0:y=575:w=iw:h=2:color=0x1A3340@0.8:t=fill",
+        "drawbox=x=0:y=470:w=iw:h=ih-470:color=0x0A1822:t=fill",
+        "drawbox=x=0:y=468:w=iw:h=2:color=0xF3B676@0.7:t=fill",
         # crane mast and jib; the jib runs along the top edge of frame
-        "drawbox=x=1196:y=0:w=20:h=472:color=0x0B0D10:t=fill",
-        "drawbox=x=690:y=0:w=530:h=14:color=0x0B0D10:t=fill",
-        "drawbox=x=1150:y=14:w=66:h=10:color=0x0B0D10:t=fill",
-        # hull: the product hero
-        "drawbox=x={0}:y={1}:w={2}:h={3}:color=0x111A22:t=fill".format(HULL.x, HULL.y, HULL.w, HULL.h),
+        "drawbox=x=1196:y=0:w=20:h=472:color=0x07090C:t=fill",
+        "drawbox=x=1213:y=0:w=3:h=472:color=0xE7A868@0.35:t=fill",
+        "drawbox=x=690:y=0:w=530:h=14:color=0x07090C:t=fill",
+        "drawbox=x=1150:y=14:w=66:h=10:color=0x07090C:t=fill",
+        # hull: the product hero, with a lit deck edge, portholes and a brass stripe
+        "drawbox=x={0}:y={1}:w={2}:h={3}:color=0x0E161E:t=fill".format(HULL.x, HULL.y, HULL.w, HULL.h),
+        "drawbox=x={0}:y={1}:w={2}:h=2:color=0xF0B878@0.75:t=fill".format(HULL.x, HULL.y, HULL.w),
         "drawbox=x={0}:y={1}:w={2}:h=6:color=0xC89B54:t=fill".format(HULL.x, HULL.y + 40, HULL.w),
-        "drawbox=x=400:y=330:w=220:h=62:color=0x161F28:t=fill",
-        "drawbox=x=430:y=346:w=150:h=10:color=0xE7C27A@0.65:t=fill",
+        "drawbox=x=400:y=330:w=220:h=62:color=0x121B24:t=fill",
+        "drawbox=x=400:y=330:w=220:h=2:color=0xF0B878@0.6:t=fill",
+        "drawbox=x=430:y=346:w=150:h=10:color=0xF2CC88@0.85:t=fill",
+    ]
+    parts += ["drawbox=x={0}:y={1}:w=7:h=7:color=0xF6CF8E@0.9:t=fill".format(x, HULL.y + 20) for x in range(140, 700, 46)]
+    parts += [
         # quay panel and wordmark
-        "drawbox=x={0}:y={1}:w={2}:h={3}:color=0x0A0E13:t=fill".format(w.x, w.y, w.w, w.h),
+        "drawbox=x={0}:y={1}:w={2}:h={3}:color=0x080B10:t=fill".format(w.x, w.y, w.w, w.h),
         "drawbox=x={0}:y={1}:w={2}:h={3}:color=0xC89B54:t=3".format(w.x, w.y, w.w, w.h),
-        "drawbox=x={0}:y={1}:w=10:h={2}:color=0x0B0D10:t=fill".format(w.x + 40, w.y + w.h, 470 - w.y - w.h),
-        "drawbox=x={0}:y={1}:w=10:h={2}:color=0x0B0D10:t=fill".format(w.x + w.w - 50, w.y + w.h, 470 - w.y - w.h),
+        "drawbox=x={0}:y={1}:w=10:h={2}:color=0x07090C:t=fill".format(w.x + 40, w.y + w.h, 470 - w.y - w.h),
+        "drawbox=x={0}:y={1}:w=10:h={2}:color=0x07090C:t=fill".format(w.x + w.w - 50, w.y + w.h, 470 - w.y - w.h),
         _wordmark_text(),
-        # talent body (face is overlaid separately)
-        "drawbox=x=168:y=452:w=168:h=268:color=0x1B1C22:t=fill",
-        "drawbox=x=232:y=452:w=40:h=70:color=0xD8CFC0:t=fill",
+        # talent body with a warm rim light from the sunset (face is overlaid separately)
+        "drawbox=x=168:y=452:w=168:h=268:color=0x2B2D36:t=fill",
+        "drawbox=x=168:y=452:w=168:h=3:color=0x3A3D48:t=fill",
+        "drawbox=x=333:y=456:w=3:h=264:color=0xE7A868@0.5:t=fill",
+        "drawbox=x=232:y=452:w=40:h=70:color=0xCFC6B6:t=fill",
     ]
     return ",".join(parts)
 
 
 def _sky() -> str:
     return (
-        "gradients=s={0}x{1}:r={2}:d={3}:c0=0x16222F:c1=0xD38C5A:"
-        "x0=640:y0=0:x1=640:y1=470:nb_colors=2:speed=0:type=linear"
-    ).format(WIDTH, HEIGHT, FPS, DURATION_MS / 1000.0)
+        "gradients=s={0}x{1}:r={2}:d={3:.4f}:c0=0x0A111D:c1=0x24304A:c2=0x8E5246:c3=0xF2A464:"
+        "x0=640:y0=0:x1=640:y1=470:nb_colors=4:speed=0:type=linear"
+    ).format(WIDTH, HEIGHT, FPS, FRAME_S)
 
 
 def _face_source() -> str:
@@ -161,31 +211,47 @@ def _features() -> str:
 
 
 def master_graph(*, with_load: bool = True) -> str:
-    """Full filter graph. `with_load=False` is the clean plate."""
+    """Full filter graph. `with_load=False` is the clean plate.
+
+    Everything static is rendered once and held; only the water shimmer, the
+    crane load and the film grain move. All noise uses fixed seeds, so the
+    master is byte-identical on every run.
+    """
     duration = DURATION_MS / 1000.0
     graph = [
-        "{0},format=yuv420p,{1}[plate]".format(_sky(), _plate_chain()),
+        "{0},format=rgba[sky]".format(_sky()),
+        "{0}[sun]".format(_sun()),
+        "{0}[refl]".format(_reflection()),
+        "[sky][sun]overlay=x={0}:y={1}[s1]".format(WIDTH // 2 - 320 + 120, 470 - 360),
+        "[s1]format=yuv420p,{0},{1}[s2]".format(_skyline(), _set_chain()),
+        "[s2][refl]overlay=x={0}:y=470[s3]".format(WIDTH // 2 - 130 + 120),
         "{0}[face]".format(_face_source()),
-        "[plate][face]overlay=x={0}:y={1}:format=auto,{2}[lit]".format(FACE.x, FACE.y, _features()),
+        "[s3][face]overlay=x={0}:y={1}:format=auto,{2},format=yuv420p[static0]".format(FACE.x, FACE.y, _features()),
+        "[static0]{0}[static]".format(_hold("null")),
+        (
+            "color=c=0x0B1A24:s={0}x{1}:r={2}:d={3},noise=alls=70:allf=t+u:all_seed=7,"
+            "avgblur=sizeX=30:sizeY=1,eq=brightness=0.04,format=rgba,colorchannelmixer=aa=0.6[shimmer]"
+        ).format(WIDTH, HEIGHT - 472, FPS, duration),
+        "[static][shimmer]overlay=x=0:y=472:format=auto[lit]",
     ]
+    finish = "eq=contrast=1.06:saturation=1.08,vignette=angle=PI/4.5,noise=alls=7:allf=t:all_seed=11,format=yuv420p"
     if not with_load:
-        graph.append("[lit]vignette=angle=PI/5[out]")
+        graph.append("[lit]{0}[out]".format(finish))
         return ";".join(graph)
     graph.extend(
         [
             (
-                "color=c=0xA8502A:s={0}x{1}:r={2}:d={3},"
-                "drawbox=x=0:y=0:w=iw:h=ih:color=0x5E2A15:t=6,"
-                "drawbox=x=0:y=40:w=iw:h=4:color=0x7A3519:t=fill,"
-                "drawbox=x=0:y=84:w=iw:h=4:color=0x7A3519:t=fill,"
-                "drawbox=x=0:y=128:w=iw:h=4:color=0x7A3519:t=fill[load]"
+                "color=c=0xA14C28:s={0}x{1}:r={2}:d={3},"
+                "drawbox=x=0:y=0:w=iw:h=ih:color=0x4E2312:t=6,"
+                "drawbox=x=0:y=6:w=iw:h=3:color=0xD27A45@0.6:t=fill,"
+                "drawbox=x=0:y=40:w=iw:h=4:color=0x6E3017:t=fill,"
+                "drawbox=x=0:y=84:w=iw:h=4:color=0x6E3017:t=fill,"
+                "drawbox=x=0:y=128:w=iw:h=4:color=0x6E3017:t=fill[load]"
             ).format(_LOAD_W, _LOAD_H, FPS, duration),
-            "color=c=0x0A0A0C:s=6x1400:r={0}:d={1}[cable]".format(FPS, duration),
-            "[lit][cable]overlay=x={0}:y='({1})-1400':eval=frame[cabled]".format(
-                _LOAD_X + _LOAD_W // 2 - 3, _LOAD_Y
-            ),
+            "color=c=0x07080A:s=6x1400:r={0}:d={1}[cable]".format(FPS, duration),
+            "[lit][cable]overlay=x={0}:y='({1})-1400':eval=frame[cabled]".format(_LOAD_X + _LOAD_W // 2 - 3, _LOAD_Y),
             "[cabled][load]overlay=x={0}:y='{1}':eval=frame[loaded]".format(_LOAD_X, _LOAD_Y),
-            "[loaded]vignette=angle=PI/5[out]",
+            "[loaded]{0}[out]".format(finish),
         ]
     )
     return ";".join(graph)

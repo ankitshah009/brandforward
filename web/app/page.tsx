@@ -8,7 +8,7 @@ import { btnVariants, Chip } from "@/components/bf/primitives";
 import { cn } from "@/lib/utils";
 
 // Figures from the deterministic harbor-launch job (the engine draws the same master every run).
-const MASTER = "260.4 KB";
+const MASTER = "30.7 MB";
 const PROXY = "2.0 KB";
 
 const fade = {
@@ -69,7 +69,7 @@ export default function Landing() {
             <img src="/frame-112-occluded.jpg" alt="" className="aspect-video w-full object-cover opacity-80" />
             <div className="flex items-center justify-between bg-surface-1 px-3 py-2">
               <span className="font-display text-[34px] leading-none text-hold">HOLD</span>
-              <span className="font-mono text-[10px] text-muted-foreground">frame 112 · 67.0% covered</span>
+              <span className="font-mono text-[10px] text-muted-foreground">frame 111 · 65.9% covered</span>
             </div>
           </div>
           <div className="-mt-6 ml-16 -rotate-[4deg] overflow-hidden rounded-[6px] border border-clear/50 bg-surface-1 shadow-[var(--glow-clear)]">
@@ -173,7 +173,7 @@ export default function Landing() {
         <motion.div {...fade} className="mt-6 grid gap-4 md:grid-cols-2">
           <div className="flex items-center gap-5 rounded-[8px] border border-hold/40 bg-hold-dim p-5">
             <span className="font-display text-[56px] leading-none text-hold">HOLD</span>
-            <p className="text-sm text-muted-foreground">The cloud plans a logo hold at 00:03.900. Frame 112 shows the wordmark 67.0% covered by a crane load.</p>
+            <p className="text-sm text-muted-foreground">The cloud plans a logo hold at 00:03.900. Frame 111 shows the wordmark 65.9% covered by a crane load.</p>
           </div>
           <div className="flex items-center gap-5 rounded-[8px] border border-clear/40 bg-clear-dim p-5">
             <span className="font-display text-[56px] leading-none text-clear">CLEAR</span>

@@ -2,7 +2,38 @@
 
 **Pre-publishability verification for unreleased video. Raw footage stays on the workstation. Cloud models plan edits from a 2 KB metadata proxy. Every claim they make is checked against decoded frames before anything renders, and the result is a signed receipt.**
 
-<!-- DEMO_VIDEO -->
+<p align="center">
+  <a href="https://github.com/ankitshah009/brandforward/releases/download/v0.2.0/brandforward-demo.mp4">
+    <img src="docs/demo-preview.gif" alt="BrandForward console: a cloud plan is held at frame 111 (65.9% covered), revised with evidence, then cleared" width="960">
+  </a>
+  <br>
+  <b><a href="https://github.com/ankitshah009/brandforward/releases/download/v0.2.0/brandforward-demo.mp4">▶ Watch the 95-second demo (1080p)</a></b>: recorded from the real console against the running engine. The cloud plan uses the labeled scripted provider; the frame measurements, receipts, render and the on-device Gemma 4 31B plan are real.
+</p>
+
+## Your personal agent for footage you can't upload
+
+### Why it works as a personal agent
+
+- **It uses frontier models without uploading your footage.** Planners see a ~2 KB anonymized proxy. One egress seam builds, guards, and logs the exact request bytes, and raw media sent stays at 0 B.
+- **It trusts neither itself nor the cloud.** Every claim, and everything an edit implies, is checked against your decoded frames. A wrong claim comes back as HOLD with the exact frame, its SHA-256, and the percentage covered.
+- **It fixes its own mistakes.** *Revise with evidence* sends the planner only the failed checks (ids, intervals, numbers, reasons, never pixels) and gets a corrected plan.
+- **It keeps working offline.** Drop the link and planning moves to Gemma 4 31B on your machine through Ollama. Nothing is transmitted.
+- **It hands you proof.** The Ed25519 receipt keeps measured facts apart from model opinions. Anyone can verify it offline with `python -m brand_forward.verify`. Nothing renders until a valid receipt says CLEAR.
+
+### Try it in 3 minutes
+
+1. `git clone https://github.com/ankitshah009/brandforward && cd brandforward`
+2. Terminal 1: `cd engine && uv run --with-requirements requirements.txt python -m brand_forward`
+3. Terminal 2: `cd web && npm install && npm run dev`, then open http://localhost:3000 and choose **Run the harbor-launch job**.
+4. Press **N** to walk the demo: Send proxy → Cross-check & sign (HOLD: frame 111, wordmark 65.9% covered) → Revise with evidence → Cross-check & sign (CLEAR) → Render proof cut → Verify signature → Tamper test → Drop link → Plan on device → Cross-check & sign (CLEAR).
+5. Optional: pull a 27B–32B-class model into Ollama for on-device planning; without one, a deterministic rule planner runs. Put `OPENAI_API_KEY=` in a repo-root `.env.local` and pick **Live** to use a real cloud planner.
+6. Verify a downloaded receipt offline: `cd engine && uv run --with-requirements requirements.txt python -m brand_forward.verify receipt.json --public-key <public_key from GET /health>`
+
+### Day to day
+
+A creator, founder, or small team brings unreleased footage and asks for a cut: a logo reveal, a lower third, redactions. The agent plans with cloud or local weights, and the workstation checks the plan against the frames. You get a signed receipt to send to a client, a platform, or legal, and then the render.
+
+Today the job is a synthetic harbor-launch shot drawn by ffmpeg. Ingesting arbitrary footage with SAM 3.1 tracking and Whisper transcription is the ThinkStation P8 step (see [From this build to a ThinkStation P8](#from-this-build-to-a-thinkstation-p8)).
 
 ## The problem
 
@@ -18,15 +49,15 @@ BrandForward moves the trust boundary. Pixels never leave the workstation. Model
 
 The demo job is `harbor-launch`: a 6-second launch shot of the MIRA hull. The talent is unreleased, and a crane load swings in front of the MIRA wordmark partway through.
 
-1. **Ingest and measure, on device.** ffmpeg decodes and SHA-256-hashes all 144 frames. Vision compares the wordmark region of every frame with the brand template and records pixel coverage in integer basis points. In this shot the wordmark is covered from `00:03.708` to `00:05.333`, at up to 66.9 %.
-2. **Seal the proxy.** The only document allowed to leave is a ~2 KB proxy: track ids, visibility spans, redaction flags, transcript lines, and one frame hash per second. A leakage guard rejects anything that looks like pixels, file bytes, paths, or URLs. The master is ~260 KB here and gigabytes in production.
+1. **Ingest and measure, on device.** ffmpeg decodes and SHA-256-hashes all 144 frames. Vision compares the wordmark region of every frame with the brand template and records pixel coverage in integer basis points. In this shot the wordmark is covered from `00:03.708` to `00:05.333`, at up to 65.9 %.
+2. **Seal the proxy.** The only document allowed to leave is a ~2 KB proxy: track ids, visibility spans, redaction flags, transcript lines, and one frame hash per second. A leakage guard rejects anything that looks like pixels, file bytes, paths, or URLs. The master is 30.7 MB here (6 s of 720p) and gigabytes in production.
 3. **Cloud plan.** The proxy goes through a single egress seam that records the exact request bytes, their size, and their SHA-256. The cloud returns an edit plan: a logo hold, a lower third, face blur, and the visibility claims it relied on.
 4. **Frame cross-check → HOLD.** The workstation never trusts the plan's own claims alone. Each edit implies checks of its own:
    - **measured**: is the wordmark visible across the hold interval, frame by frame?
    - **geometry**: does the lower third stay clear of the face and the wordmark?
    - **policy**: is a talent flagged for redaction actually blurred?
 
-   The cloud's hold at `00:03.900–00:04.800` fails. Frame 112 shows the wordmark 66.9 % covered.
+   The cloud's hold at `00:03.900–00:04.800` fails. Frame 111 shows the wordmark 65.9 % covered.
 5. **Revise or fail over.** *Revise* sends the planner only the failed checks (ids, intervals, numbers, reasons, never pixels) and gets a corrected plan. *Drop link* never touches the network: the same planning step runs on device on Gemma 4 31B through Ollama, or on a deterministic rule planner if no local weight is loaded. A cloud error or an answer outside the schema fails over the same way.
 6. **CLEAR, and a signed receipt.** The receipt is Ed25519 over canonical JSON. It keeps two sections apart:
    - `measured`: asset hash, frame count, vision method, template hash, ffmpeg version.

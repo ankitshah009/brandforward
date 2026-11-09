@@ -25,6 +25,7 @@ export interface MonitorProps {
 
 export function Monitor(p: MonitorProps) {
   const video = useRef<HTMLVideoElement>(null);
+  const ambient = useRef<HTMLVideoElement>(null);
   const { frame, width: W, height: H, fps, frameCount, onFrame, onEnded } = p;
   const wm = p.tracks.find((t) => t.kind === "logo");
   const talent = p.tracks.find((t) => t.kind === "person");
@@ -40,14 +41,17 @@ export function Monitor(p: MonitorProps) {
     if (!el || p.playing) return;
     const target = (frame.index + 0.5) / fps;
     if (Math.abs(el.currentTime - target) > 0.5 / fps) el.currentTime = target;
+    if (ambient.current) ambient.current.currentTime = target;
   }, [frame.index, fps, p.playing]);
 
   // Playing: follow the video frame-accurately.
   useEffect(() => {
     const el = video.current;
+    const glow = ambient.current;
     if (!el) return;
     if (!p.playing) {
       el.pause();
+      glow?.pause();
       return;
     }
     let handle = 0;
@@ -55,10 +59,15 @@ export function Monitor(p: MonitorProps) {
     const tick = () => {
       if (!live) return;
       onFrame(Math.min(frameCount - 1, Math.floor(el.currentTime * fps)));
+      if (glow && Math.abs(glow.currentTime - el.currentTime) > 0.15) glow.currentTime = el.currentTime;
       handle = requestAnimationFrame(tick);
     };
     if (el.ended || el.currentTime >= el.duration - 0.05) el.currentTime = 0;
     void el.play().catch(() => onEnded());
+    if (glow) {
+      glow.currentTime = el.currentTime;
+      void glow.play().catch(() => undefined);
+    }
     handle = requestAnimationFrame(tick);
     return () => {
       live = false;
@@ -68,8 +77,20 @@ export function Monitor(p: MonitorProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-2">
-      <div className="relative min-h-0 flex-1">
-        <div className="absolute inset-0 flex items-center justify-center">
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-[8px]">
+        {/* Ambient light: the same local master, blurred, filling the stage around the monitor. */}
+        <video
+          ref={ambient}
+          src={p.videoSrc}
+          muted
+          playsInline
+          preload="auto"
+          aria-hidden
+          tabIndex={-1}
+          className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-[48px] saturate-150"
+        />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,var(--surface-0)_85%)]" />
+        <div className="absolute inset-0 flex items-center justify-center p-3">
           <div className="relative aspect-video h-full max-h-full max-w-full overflow-hidden rounded-[4px] border border-hairline-strong bg-surface-0 shadow-[0_30px_80px_-30px_oklch(0_0_0/90%)]">
             <video
               ref={video}

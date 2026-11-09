@@ -241,7 +241,7 @@ export default function Console({ jobId }: { jobId: string }) {
     !selected ? "idle" : verification ? "done" : "active",
     !selected ? "idle" : !verification ? "active" : verification.verdict === "hold" ? "active" : "done",
     !receipt ? "idle" : "done",
-    render ? "done" : verdict === "clear" ? "active" : "idle",
+    render ? "done" : receipt ? "active" : "idle",
   ];
 
   return (

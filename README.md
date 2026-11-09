@@ -7,7 +7,7 @@
     <img src="docs/demo-preview.gif" alt="BrandForward console: a cloud plan is held at frame 111 (65.9% covered), revised with evidence, then cleared" width="960">
   </a>
   <br>
-  <b><a href="https://github.com/ankitshah009/brandforward/releases/download/v0.2.0/brandforward-demo.mp4">▶ Watch the 95-second demo (1080p)</a></b>: recorded from the real console against the running engine. The cloud plan uses the labeled scripted provider; the frame measurements, receipts, render and the on-device Gemma 4 31B plan are real.
+  <b><a href="https://github.com/ankitshah009/brandforward/releases/download/v0.2.0/brandforward-demo.mp4">▶ Watch the 95-second narrated demo (1080p)</a></b>: recorded from the real console against the running engine, composed in Remotion, narrated and sound-designed in Edits. The cloud plan uses the labeled scripted provider; the frame measurements, receipts, render and the on-device Gemma 4 31B plan are real.
 </p>
 
 ## Your personal agent for footage you can't upload

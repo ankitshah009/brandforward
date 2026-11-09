@@ -35,7 +35,7 @@ async function forward(request: NextRequest, path: string[]): Promise<Response> 
     });
   } catch {
     return NextResponse.json(
-      { detail: `Engine offline. Start it with: cd engine && uv run --with-requirements requirements.txt python -m brand_forward (expects ${ENGINE}).` },
+      { detail: `Engine offline. Start it with: cd engine && uv run python -m brand_forward (expects ${ENGINE}).` },
       { status: 503, headers: { "x-brandforward-engine": "offline" } },
     );
   }

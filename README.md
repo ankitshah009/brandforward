@@ -23,11 +23,11 @@
 ### Try it in 3 minutes
 
 1. `git clone https://github.com/ankitshah009/brandforward && cd brandforward`
-2. Terminal 1: `cd engine && uv run --with-requirements requirements.txt python -m brand_forward`
+2. Terminal 1: `cd engine && uv run python -m brand_forward`
 3. Terminal 2: `cd web && npm install && npm run dev`, then open http://localhost:3000 and choose **Run the harbor-launch job**.
 4. Press **N** to walk the demo: Send proxy → Cross-check & sign (HOLD: frame 111, wordmark 65.9% covered) → Revise with evidence → Cross-check & sign (CLEAR) → Render proof cut → Verify signature → Tamper test → Drop link → Plan on device → Cross-check & sign (CLEAR).
 5. Optional: pull a 27B–32B-class model into Ollama for on-device planning; without one, a deterministic rule planner runs. Put `OPENAI_API_KEY=` in a repo-root `.env.local` and pick **Live** to use a real cloud planner.
-6. Verify a downloaded receipt offline: `cd engine && uv run --with-requirements requirements.txt python -m brand_forward.verify receipt.json --public-key <public_key from GET /health>`
+6. Verify a downloaded receipt offline: `cd engine && uv run python -m brand_forward.verify receipt.json --public-key <public_key from GET /health>`
 
 ### Day to day
 
@@ -177,12 +177,12 @@ On a 24 GB card these stages take turns and evict each other's weights and KV ca
 
 ## Quickstart
 
-Requirements: [uv](https://docs.astral.sh/uv/), ffmpeg with `drawtext` (libfreetype), Node 20+. Optional: [Ollama](https://ollama.com) with a 27B to 32B-class model pulled.
+Requirements: [uv](https://docs.astral.sh/uv/) (the engine pins Python 3.15 in `engine/.python-version`; uv installs it), ffmpeg with `drawtext` (libfreetype), Node 20+. Optional: [Ollama](https://ollama.com) with a 27B to 32B-class model pulled.
 
 ```bash
 # engine on 127.0.0.1:8787
 cd engine
-uv run --with-requirements requirements.txt python -m brand_forward
+uv run python -m brand_forward
 
 # console on http://localhost:3000 (second terminal)
 cd web
@@ -196,14 +196,14 @@ Verify a downloaded receipt with nothing but the receipt and the workstation's p
 
 ```bash
 cd engine
-uv run --with-requirements requirements.txt python -m brand_forward.verify ~/Downloads/r_….json --public-key <base64>
+uv run python -m brand_forward.verify ~/Downloads/r_….json --public-key <base64>
 ```
 
 Tests:
 
 ```bash
 cd engine
-uv run --with-requirements requirements.txt --with pytest-xdist pytest -n auto
+uv run --extra dev pytest -n auto
 ```
 
 The tests use a temporary data directory, the rule planner, and the scripted cloud. No network and no GPU.

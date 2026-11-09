@@ -1,5 +1,8 @@
-fastapi>=0.110,<0.116
-uvicorn>=0.27,<0.35
-cryptography>=42,<46
-pytest>=8,<9
-httpx>=0.27,<0.29
+fastapi>=0.162.2
+starlette>=1.10.0
+anyio>=4.16.0
+uvicorn>=0.54.0
+cryptography>=50.0.2
+pytest>=9.2.0
+pytest-xdist>=3.6
+httpx>=0.28.1
